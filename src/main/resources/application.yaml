@@ -1,0 +1,29 @@
+server:
+  port: 9090
+  servlet:
+    context-path: /api
+
+parking:
+  location: MALL
+
+spring:
+  h2:
+    console:
+      enabled: true
+      path: /h2
+      settings:
+        web-allow-others: true
+  datasource:
+    url: jdbc:h2:mem:parkinglotdb
+    username: sa
+    password: sa
+    driver-class-name: org.h2.Driver
+  jpa:
+    spring.jpa.datasource-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: none
+    show-sql: false
+    properties:
+      format_sql: true
+
+
