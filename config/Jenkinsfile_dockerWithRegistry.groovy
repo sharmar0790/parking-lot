@@ -17,6 +17,7 @@ pipeline {
 
     options {
         disableConcurrentBuilds()
+        skipStagesAfterUnstable()
         buildDiscarder(logRotator(numToKeepStr: '3'))
     }
 
@@ -54,11 +55,26 @@ pipeline {
             }
         }
 
+        stage('Integrate Jenkins with EKS Cluster and Deploy App') {
+            steps {
+                withAWS(credentials: '<AWS_CREDENTIALS_ID>', region: '<AWS_REGION>') {
+                    script {
+                        sh('aws eks update-kubeconfig --name <EKS_CLUSTER_NAME> --region <AWS_REGION>')
+                        sh "kubectl apply -f <K8S_DEPLOY_FILE>.yaml"
+                    }
+                }
+            }
+        }
+
         stage('Clean up') {
             steps {
                 sh 'docker rmi ${repoName}:latest'
                 sh 'docker rmi ${ecr_repo_name}:latest'
                 sh 'docker rmi ${ecr_repo_name}:${buildVersion}'
+
+                // remove all the dangling images to clean up the space and resources
+                sh 'docker rmi $(docker images --filter "dangling=true" -q --no-trunc)'
+
             }
         }
     }

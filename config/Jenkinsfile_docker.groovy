@@ -15,6 +15,7 @@ pipeline {
 
     options {
         disableConcurrentBuilds()
+        skipStagesAfterUnstable()
         buildDiscarder(logRotator(numToKeepStr: '3'))
     }
 
@@ -54,8 +55,14 @@ pipeline {
             steps {
                 // cleanup current user docker credentials
                 sh 'rm -f ~/.dockercfg ~/.docker/config.json || true'
-                sh 'docker rmi ${registry}:latest'
-                sh 'docker rmi ${registry}:${image_tag}'
+
+                // cleanup the image stuffs
+                sh 'docker rmi ${repoName}:latest'
+                sh 'docker rmi ${ecr_repo_name}:latest'
+                sh 'docker rmi ${ecr_repo_name}:${buildVersion}'
+
+                // remove all the dangling images to clean up the space and resources
+                sh 'docker rmi $(docker images --filter "dangling=true" -q --no-trunc)'
             }
         }
     }
