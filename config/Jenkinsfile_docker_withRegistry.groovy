@@ -56,6 +56,7 @@ pipeline {
 
         stage('Clean up') {
             steps {
+                sh 'docker rmi ${repoName}:latest'
                 sh 'docker rmi ${ecr_repo_name}:latest'
                 sh 'docker rmi ${ecr_repo_name}:${buildVersion}'
             }
