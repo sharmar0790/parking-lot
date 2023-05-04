@@ -11,7 +11,6 @@ pipeline {
     environment {
         registry = "${accountId}.dkr.ecr.${regionCode}.amazonaws.com"
         ecr_repo_name = "${registry}/${repoName}"
-        build_number = "${buildVersion}"
         aws_credential_id = "aws-credentials"
         registry_credential = "ecr:${regionCode}:${aws_credential_id}"
     }
@@ -32,7 +31,6 @@ pipeline {
 
         stage('Clean & Build') {
             steps {
-
                 sh "./mvnw clean install -DskipTests"
             }
         }
@@ -48,7 +46,7 @@ pipeline {
                 script {
                     docker.withRegistry('https://${registry}', "${registry_credential}") {
                         sh 'docker tag ${repoName}:latest ${ecr_repo_name}:latest'
-                        sh 'docker tag ${repoName}:latest ${ecr_repo_name}:${build_number}'
+                        sh 'docker tag ${repoName}:latest ${ecr_repo_name}:${buildVersion}'
                         sh 'docker push ${ecr_repo_name}:latest'
                         sh 'docker push ${ecr_repo_name}:${build_number}'
                     }
@@ -59,7 +57,7 @@ pipeline {
         stage('Clean up') {
             steps {
                 sh 'docker rmi ${ecr_repo_name}:latest'
-                sh 'docker rmi ${ecr_repo_name}:${build_number}'
+                sh 'docker rmi ${ecr_repo_name}:${buildVersion}'
             }
         }
     }
