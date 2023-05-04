@@ -5,12 +5,15 @@ pipeline {
         string(name: 'accountId', defaultValue: '', description: 'AWS Account ID')
         string(name: 'regionCode', defaultValue: 'eu-west-2', description: 'AWS Region Code')
         string(name: 'repoName', defaultValue: 'sample/dev/parking-lot', description: 'Repo Name')
-        string(name: 'Build Version', defaultValue: '1.0', description: 'Build Version / Tag to be used.')
+        string(name: 'buildVersion', defaultValue: '1.5', description: 'Build Version / Tag to be used.')
     }
 
     environment {
         registry = "${accountId}.dkr.ecr.${regionCode}.amazonaws.com"
-        image_tag = "${version}"
+        ecr_repo_name = "${registry}/${repoName}"
+        build_number = "${buildVersion}"
+        aws_credential_id = "aws-credentials"
+        registry_credential = "ecr:${regionCode}:${aws_credential_id}"
     }
 
     options {
@@ -43,20 +46,20 @@ pipeline {
         stage('Docker Push') {
             steps {
                 script {
-                    docker.withRegistry('https://${registry}', 'ecr:${regionCode}:aws-credentials') {
-                        sh 'docker tag ${repoName}:latest ${registry}:latest'
-                        sh 'docker tag ${repoName}:latest ${registry}:${image_tag}'
-                        sh 'docker push ${registry}:latest'
-                        sh 'docker push ${registry}:${image_tag}'
+                    docker.withRegistry('https://${registry}', "${registry_credential}") {
+                        sh 'docker tag ${repoName}:latest ${ecr_repo_name}:latest'
+                        sh 'docker tag ${repoName}:latest ${ecr_repo_name}:${build_number}'
+                        sh 'docker push ${ecr_repo_name}:latest'
+                        sh 'docker push ${ecr_repo_name}:${build_number}'
                     }
                 }
             }
         }
 
-        stage('Cleaning up') {
+        stage('Clean up') {
             steps {
-                sh 'docker rmi ${registry}:latest'
-                sh 'docker rmi ${registry}:${image_tag}'
+                sh 'docker rmi ${ecr_repo_name}:latest'
+                sh 'docker rmi ${ecr_repo_name}:${build_number}'
             }
         }
     }
