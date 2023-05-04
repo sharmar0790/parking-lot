@@ -48,7 +48,7 @@ pipeline {
                         sh 'docker tag ${repoName}:latest ${ecr_repo_name}:latest'
                         sh 'docker tag ${repoName}:latest ${ecr_repo_name}:${buildVersion}'
                         sh 'docker push ${ecr_repo_name}:latest'
-                        sh 'docker push ${ecr_repo_name}:${build_number}'
+                        sh 'docker push ${ecr_repo_name}:${buildVersion}'
                     }
                 }
             }
