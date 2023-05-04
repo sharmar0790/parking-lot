@@ -9,7 +9,7 @@ pipeline {
     }
 
     environment {
-        registry = "${accountId}.dkr.ecr.${regionCode}.amazonaws.com/${repoName}"
+        registry = "${accountId}.dkr.ecr.${regionCode}.amazonaws.com"
         image_tag = "${version}"
     }
 
@@ -42,18 +42,19 @@ pipeline {
 
         stage('Docker Push') {
             steps {
-                sh 'aws ecr get-login-password --region $regionCode | docker login --username AWS --password-stdin $accountId.dkr.ecr.$regionCode.amazonaws.com'
-                sh 'docker tag ${repoName}:latest ${registry}:latest'
-                sh 'docker tag ${repoName}:latest ${registry}:${image_tag}'
-                sh 'docker push ${registry}:latest'
-                sh 'docker push ${registry}:${image_tag}'
+                script {
+                    docker.withRegistry('https://${registry}', 'ecr:${regionCode}:aws-credentials') {
+                        sh 'docker tag ${repoName}:latest ${registry}:latest'
+                        sh 'docker tag ${repoName}:latest ${registry}:${image_tag}'
+                        sh 'docker push ${registry}:latest'
+                        sh 'docker push ${registry}:${image_tag}'
+                    }
+                }
             }
         }
 
         stage('Cleaning up') {
             steps {
-                // cleanup current user docker credentials
-                sh 'rm -f ~/.dockercfg ~/.docker/config.json || true'
                 sh 'docker rmi ${registry}:latest'
                 sh 'docker rmi ${registry}:${image_tag}'
             }
